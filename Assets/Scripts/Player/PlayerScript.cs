@@ -7,6 +7,7 @@ public class PlayerScript : MonoBehaviour
 {
     [Header("Player Movement")]
     public float playerSpeed = 1.1f;
+    public float playerSprintSpeed = 5f;
 
     [Header("Player Animator & Gravity")]
     public CharacterController characterControllerObj;
@@ -17,6 +18,7 @@ public class PlayerScript : MonoBehaviour
 
     [Header("Player Jump & Velocity")]
     public float turnSmoothTime = 0.1f;
+    public float jumpHeight = 1f;
     private float turnSmoothVelocity;
     UnityEngine.Vector3 velocity;
     public Transform groundCheck;
@@ -33,8 +35,10 @@ public class PlayerScript : MonoBehaviour
         // Gravity
         velocity.y += gravity * Time.deltaTime;
         characterControllerObj.Move(velocity * Time.deltaTime);
-        
+
         playerMove();
+        Jump();
+        Sprint();
     }
 
     void playerMove() {
@@ -50,6 +54,28 @@ public class PlayerScript : MonoBehaviour
             
             UnityEngine.Vector3 moveDirection = UnityEngine.Quaternion.Euler(0f, targetAngle, 0f) * UnityEngine.Vector3.forward;
             characterControllerObj.Move(moveDirection.normalized * playerSpeed * Time.deltaTime);
+        }
+    }
+
+    public void Jump() {
+        if (Input.GetButtonDown("Jump") && isGrounded) {
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        }
+    }
+
+    public void Sprint() {
+        float horizontalAxis = Input.GetAxis("Horizontal");
+        float verticalAxis = Input.GetAxis("Vertical");
+
+        UnityEngine.Vector3 direction = new UnityEngine.Vector3(horizontalAxis, 0f, verticalAxis).normalized; // Normalize the vector to prevent faster diagonal movement
+
+        if (direction.magnitude >= 0.1f) {
+            float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + playerCamera.eulerAngles.y;
+            float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
+            transform.rotation = UnityEngine.Quaternion.Euler(0f, angle, 0f);
+            
+            UnityEngine.Vector3 moveDirection = UnityEngine.Quaternion.Euler(0f, targetAngle, 0f) * UnityEngine.Vector3.forward;
+            characterControllerObj.Move(moveDirection.normalized * playerSprintSpeed * Time.deltaTime);
         }
     }
 }
